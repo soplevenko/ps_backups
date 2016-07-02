@@ -1,4 +1,4 @@
-#это комментарий
+#это комментарий комментарий
 $dump_exe = """c:\Program Files\PostgreSQL\9.2.4-1.1C\bin\pg_dump.exe"""
 $restore_exe = """c:\Program Files\PostgreSQL\9.2.4-1.1C\bin\pg_restore.exe"""
 
