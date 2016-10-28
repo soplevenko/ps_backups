@@ -28,20 +28,23 @@ elseif($currentdate.DayOfWeek -eq "Sunday"){
 $baseslist = @("test-1", "test-2")
 foreach ($base in $baseslist) {
     $filename = "$path_src\$TLapseFolder\$base" + "_" + "$datefilepart.bak"
-    $dump_args = "-f$filename -Fc -b -E UTF-8 -U postgres -W $base"
+    $dump_args = "-f$filename -Fc -b -E UTF-8 -U postgres -w $base"
     Start-Process $dump_exe $dump_args -Wait -NoNewWindow
     Add-Content $backuplog "`r`nCreate backup file $filename"
 }
 
 #Replicate backup to test base
+#Optional. Commented out
+<#
 $replicabase = "test-3"
 $sourcebase = $baseslist[0]
 
 $replica_file = "$path_src\$TLapseFolder\$sourcebase" + "_" + "$datefilepart.bak" 
-$restore_args = "-d$replicabase -Fc -c -Upostgres -W $replica_file"
+$restore_args = "-d$replicabase -Fc -c -Upostgres -w $replica_file"
 
 Start-Process $restore_exe $restore_args -Wait -NoNewWindow
 Add-Content $backuplog "`r`nReplicate base $replicabase from file $replica_file"
+#>
 
 Add-Content $backuplog "`r`n"
 
@@ -79,13 +82,13 @@ foreach($path in $path_expire.Keys){
     if(Test-Path $path){
         $dateexpire = $currentdate.AddDays(-$path_expire[$path])
         foreach ($item in Get-ChildItem $path -Recurse -Include @("*.bak", "*.trn", "*.7z", "*.rar") | where {$_.CreationTime -le $dateexpire}){
-            Add-Content $cleanuplog "`r`nFlush file $item"
+            Add-Content $backuplog "`r`nFlush file $item"
             Remove-Item $item
         }
     }
     else{
-        Add-Content $cleanuplog "`r`nNo access to $path"
+        Add-Content $backuplog "`r`nNo access to $path"
     }
 }
-Add-Content $cleanuplog "`r`nCleanup finished"
-Add-Content $cleanuplog "`r`n===================================================="
+Add-Content $backuplog "`r`nCleanup finished"
+Add-Content $backuplog "`r`n===================================================="
