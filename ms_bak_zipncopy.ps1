@@ -36,7 +36,8 @@ foreach ($item in Get-ChildItem $path_src -Recurse -Include @("*.bak", "*.trn") 
 Add-Content $cleanuplog "`r`n"
 
 #move all 7-zip archives from local to remote location 
-robocopy $path_src $path_dst *.7z /S /W:3 /R:3 /MOV /NP /LOG+:$cleanuplog
+
+robocopy $path_src $path_dst *.7z /S /W:3 /R:3 /COPY:D /MOV /NP /NFL /UNILOG+:$cleanuplog
 
 Add-Content $cleanuplog "`r`n"
 
@@ -57,7 +58,7 @@ $path_expire["$path_dst\Daily"] = 90
 $path_expire["$path_dst\Weekly"] = 180
 $path_expire["$path_dst\Monthly"] = 2000
 
-#lookup through directories for expiresd files
+#lookup through directories for expired files
 foreach($path in $path_expire.Keys){
     if(Test-Path $path){
         $dateexpire = $currentdate.AddDays(-$path_expire[$path])
@@ -70,5 +71,7 @@ foreach($path in $path_expire.Keys){
         Add-Content $cleanuplog "`r`nNo access to $path"
     }
 }
-Add-Content $cleanuplog "`r`nCleanup finished"
+
+$timetook = New-TimeSpan -Start $currentdate
+Add-Content $cleanuplog "`r`nCleanup finished in $timetook"
 Add-Content $cleanuplog "`r`n===================================================="
