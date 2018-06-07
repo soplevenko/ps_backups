@@ -1,3 +1,7 @@
+#Simple script, that dedicated to automatically backup selected Postgres databases.
+#Script puts backup files to local and remote location
+#Script also distributes backup files by time lapse (daily,  weekly, monthly).
+
 #path to local and remote backup folders
 $path_src = "g:\pgsqlbackup"
 $path_dst = "g:\pgsqlbackup_copy"
