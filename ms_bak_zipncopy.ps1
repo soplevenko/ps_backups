@@ -9,7 +9,7 @@ $currentdate = Get-Date
 
 #write cleanup log
 $cleanuplog = "$path_src\cleanup.log"
-Add-Content $cleanuplog "`r`n`r`nCleanup log for $currentdate"
+Add-Content $cleanuplog ("`r`n`r`nCleanup log for " + $currentdate.ToString("u"))
 
 #if no access to remote folder - do nothing
 if(-not (Test-Path $path_dst)) {
@@ -72,6 +72,6 @@ foreach($path in $path_expire.Keys){
     }
 }
 
-$timetook = New-TimeSpan -Start $currentdate
-Add-Content $cleanuplog "`r`nCleanup finished in $timetook"
+$timetook = "{0:hh}:{0:mm}:{0:ss}" -f $(New-TimeSpan -Start $currentdate)
+Add-Content $cleanuplog "`r`nCleanup finished at $(Get-Date -format u) in $timetook"
 Add-Content $cleanuplog "`r`n===================================================="

@@ -1,74 +1,27 @@
 #Simple script, that dedicated to automatically backup selected Postgres databases.
 #Script puts backup files to local and remote location
-#Script also distributes backup files by time lapse (daily,  weekly, monthly).
+#Script also distributes backup files by time lapse (daily, weekly, monthly).
+#Each time lapse corresponds to separate subfolder and retention period.
 
-#path to local and remote backup folders
+#set path to local and remote backup folders
 $path_src = "g:\pgsqlbackup"
 $path_dst = "g:\pgsqlbackup_copy"
 
-#Paths to PostgreSQL commands
+#set path to PostgreSQL binaries
 $dump_exe = """d:\Program Files\PostgreSQL\9.4.2-1.1C\bin\pg_dump.exe"""
-$restore_exe = """d:\Program Files\PostgreSQL\9.4.2-1.1C\bin\pg_restore.exe"""
 
-#Get current date, format for filename
+#set bases names for backup
+$baseslist = @("test-1", "test-2")
+
+#get current date, format for filename
 $currentdate = Get-Date
 $datefilepart = $currentdate.ToString("yyMMdd_HHmm")
 
-#write backup log
+#set backup log name and location
 $backuplog = "$path_src\backup.log"
 Add-Content $backuplog "`r`n`r`nBackup log for $currentdate"
 
-
-#What subfolder used for today file
-$TLapseFolder = "Daily"
-if($currentdate.Day -eq 1){
-    $TLapseFolder = "Monthly"
-}
-elseif($currentdate.DayOfWeek -eq "Sunday"){
-    $TLapseFolder = "Weekly"
-}
-
-#Create backup for every base from list
-$baseslist = @("test-1", "test-2")
-foreach ($base in $baseslist) {
-    $filename = "$path_src\$TLapseFolder\$base" + "_" + "$datefilepart.bak"
-    $dump_args = "-f$filename -Fc -b -E UTF-8 -U postgres -w $base"
-    Start-Process $dump_exe $dump_args -Wait -NoNewWindow
-    Add-Content $backuplog "`r`nCreate backup file $filename"
-}
-
-#Replicate backup to test base
-#Optional. Commented out
-<#
-$replicabase = "test-3"
-$sourcebase = $baseslist[0]
-
-$replica_file = "$path_src\$TLapseFolder\$sourcebase" + "_" + "$datefilepart.bak" 
-$restore_args = "-d$replicabase -Fc -c -Upostgres -w $replica_file"
-
-Start-Process $restore_exe $restore_args -Wait -NoNewWindow
-Add-Content $backuplog "`r`nReplicate base $replicabase from file $replica_file"
-#>
-
-Add-Content $backuplog "`r`n"
-
-#if no access to remote folder - do nothing
-if(-not (Test-Path $path_dst)) {
-    Add-Content $backuplog "`r`nNo access to $path_dst"
-    Add-Content $backuplog "`r`nBackup finished with error"
-    Add-Content $backuplog "`r`n===================================================="
-    exit 1
-}
-
-
-#copy all bak archives from local to remote location 
-robocopy $path_src $path_dst *.bak /S /W:3 /R:3 /NP /LOG+:$backuplog
-
-Add-Content $backuplog "`r`n"
-
-#perform cleanup, delete old backup files
-
-#backup files expiration interval in days for every timelapse
+#set backup files retention period in days for every subfolder (and time lapse respectively)
 $path_expire = @{}
 
 #local folders
@@ -81,7 +34,46 @@ $path_expire["$path_dst\Daily"] = 90
 $path_expire["$path_dst\Weekly"] = 180
 $path_expire["$path_dst\Monthly"] = 2000
 
-#lookup through directories for expiresd files
+
+#Determine subfolder by time lapse
+#If it's 1st day of month - then "Monthly"
+#Else if it's end of week - then "Weekly"
+#Otherwise - "Daily"
+
+$TLapseFolder = "Daily"
+if($currentdate.Day -eq 1){
+    $TLapseFolder = "Monthly"
+}
+elseif($currentdate.DayOfWeek -eq "Sunday"){
+    $TLapseFolder = "Weekly"
+}
+
+#Create backup for every base from list
+foreach ($base in $baseslist) {
+    $filename = "$path_src\$TLapseFolder\$base" + "_" + "$datefilepart.bak"
+    $dump_args = "-f$filename -Fc -b -E UTF-8 -U postgres -w $base"
+    Start-Process $dump_exe $dump_args -Wait -NoNewWindow
+    Add-Content $backuplog "`r`nCreate backup file $filename"
+}
+
+Add-Content $backuplog "`r`n"
+
+#if no access to remote folder then log and exit
+if(-not (Test-Path $path_dst)) {
+    Add-Content $backuplog "`r`nNo access to $path_dst"
+    Add-Content $backuplog "`r`nBackup finished with error"
+    Add-Content $backuplog "`r`n===================================================="
+    exit 1
+}
+
+#copy all bak archives from local to remote location 
+robocopy $path_src $path_dst *.bak /S /W:3 /R:3 /NP /LOG+:$backuplog
+
+Add-Content $backuplog "`r`n"
+
+#perform cleanup, delete old backup files
+
+#lookup through directories for expired files
 foreach($path in $path_expire.Keys){
     if(Test-Path $path){
         $dateexpire = $currentdate.AddDays(-$path_expire[$path])
