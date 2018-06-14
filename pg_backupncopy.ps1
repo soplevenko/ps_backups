@@ -19,7 +19,7 @@ $datefilepart = $currentdate.ToString("yyMMdd_HHmm")
 
 #set backup log name and location
 $backuplog = "$path_src\backup.log"
-Add-Content $backuplog "`r`n`r`nBackup log for $currentdate"
+Add-Content $backuplog ("`r`n`r`nBackup log for " + $currentdate.ToString("u"))
 
 #set backup files retention period in days for every subfolder (and time lapse respectively)
 $path_expire = @{}
@@ -86,5 +86,7 @@ foreach($path in $path_expire.Keys){
         Add-Content $backuplog "`r`nNo access to $path"
     }
 }
-Add-Content $backuplog "`r`nCleanup finished"
+
+$timetook = "{0:hh}:{0:mm}:{0:ss}" -f $(New-TimeSpan -Start $currentdate)
+Add-Content $backuplog "`r`nBackup finished at $(Get-Date -format u) in $timetook"
 Add-Content $backuplog "`r`n===================================================="
