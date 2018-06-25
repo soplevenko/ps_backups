@@ -7,6 +7,8 @@
 $path_src = "g:\pgsqlbackup"
 $path_dst = "g:\pgsqlbackup_copy"
 
+$CRLF = "`r`n"
+
 #set path to PostgreSQL binaries
 $dump_exe = """d:\Program Files\PostgreSQL\9.4.2-1.1C\bin\pg_dump.exe"""
 
@@ -19,7 +21,8 @@ $datefilepart = $currentdate.ToString("yyMMdd_HHmm")
 
 #set backup log name and location
 $backuplog = "$path_src\backup.log"
-Add-Content $backuplog ("`r`n`r`nBackup log for " + $currentdate.ToString("u"))
+Add-Content $backuplog $CRLF
+Add-Content $backuplog ($CRLF + "Backup log for " + $currentdate.ToString("u"))
 
 #set backup files retention period in days for every subfolder (and time lapse respectively)
 $path_expire = @{}
@@ -53,7 +56,7 @@ foreach ($base in $baseslist) {
     $filename = "$path_src\$TLapseFolder\$base" + "_" + "$datefilepart.bak"
     $dump_args = "-f$filename -Fc -b -E UTF-8 -U postgres -w $base"
     Start-Process $dump_exe $dump_args -Wait -NoNewWindow
-    Add-Content $backuplog "`r`nCreate backup file $filename"
+    Add-Content $backuplog ($CRLF + "Create backup file" + $filename)
 }
 
 Add-Content $backuplog "`r`n"
@@ -66,18 +69,16 @@ if(-not (Test-Path $path_dst)) {
     exit 1
 }
 
-#copy all bak archives from local to remote location 
+#copy all *.bak files from local to remote location 
 robocopy $path_src $path_dst *.bak /S /W:3 /R:3 /NP /LOG+:$backuplog
 
 Add-Content $backuplog "`r`n"
 
-#perform cleanup, delete old backup files
-
-#lookup through directories for expired files
+#perform cleanup, lookup through directories for expired files to flush them
 foreach($path in $path_expire.Keys){
     if(Test-Path $path){
         $dateexpire = $currentdate.AddDays(-$path_expire[$path])
-        foreach ($item in Get-ChildItem $path -Recurse -Include @("*.bak", "*.trn", "*.7z", "*.rar") | where {$_.CreationTime -le $dateexpire}){
+        foreach ($item in Get-ChildItem $path -Recurse -Include @("*.bak", "*.trn", "*.7z", "*.rar") | Where-Object {$_.CreationTime -le $dateexpire}){
             Add-Content $backuplog "`r`nFlush file $item"
             Remove-Item $item
         }
