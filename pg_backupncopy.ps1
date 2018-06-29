@@ -7,13 +7,15 @@
 $path_src = "g:\pgsqlbackup"
 $path_dst = "g:\pgsqlbackup_copy"
 
-$CRLF = "`r`n"
+#To add new line into log just write empty one
+$CRLF = ""
 
 #set path to PostgreSQL binaries
 $dump_exe = """d:\Program Files\PostgreSQL\9.4.2-1.1C\bin\pg_dump.exe"""
 
 #set bases names for backup
-$baseslist = @("test-1", "test-2")
+#$baseslist = @("test-1", "test-2")
+$baseslist = @("Optim83", "glv_tpc")
 
 #get current date, format for filename
 $currentdate = Get-Date
@@ -21,8 +23,7 @@ $datefilepart = $currentdate.ToString("yyMMdd_HHmm")
 
 #set backup log name and location
 $backuplog = "$path_src\backup.log"
-Add-Content $backuplog $CRLF
-Add-Content $backuplog ($CRLF + "Backup log for " + $currentdate.ToString("u"))
+Add-Content $backuplog ("Backup log for " + $currentdate.ToString("u"))
 
 #set backup files retention period in days for every subfolder (and time lapse respectively)
 $path_expire = @{}
@@ -56,38 +57,44 @@ foreach ($base in $baseslist) {
     $filename = "$path_src\$TLapseFolder\$base" + "_" + "$datefilepart.bak"
     $dump_args = "-f$filename -Fc -b -E UTF-8 -U postgres -w $base"
     Start-Process $dump_exe $dump_args -Wait -NoNewWindow
-    Add-Content $backuplog ($CRLF + "Create backup file" + $filename)
+    Add-Content $backuplog "Create backup file $filename"
 }
 
-Add-Content $backuplog "`r`n"
+Add-Content $backuplog $CRLF
 
 #if no access to remote folder then log and exit
 if(-not (Test-Path $path_dst)) {
-    Add-Content $backuplog "`r`nNo access to $path_dst"
-    Add-Content $backuplog "`r`nBackup finished with error"
-    Add-Content $backuplog "`r`n===================================================="
+    Add-Content $backuplog "No access to $path_dst"
+    Add-Content $backuplog "Backup finished with error"
+    Add-Content $backuplog "===================================================="
+    Add-Content $backuplog $CRLF
     exit 1
 }
 
 #copy all *.bak files from local to remote location 
 robocopy $path_src $path_dst *.bak /S /W:3 /R:3 /NP /LOG+:$backuplog
 
-Add-Content $backuplog "`r`n"
+Add-Content $backuplog $CRLF
 
 #perform cleanup, lookup through directories for expired files to flush them
 foreach($path in $path_expire.Keys){
     if(Test-Path $path){
         $dateexpire = $currentdate.AddDays(-$path_expire[$path])
         foreach ($item in Get-ChildItem $path -Recurse -Include @("*.bak", "*.trn", "*.7z", "*.rar") | Where-Object {$_.CreationTime -le $dateexpire}){
-            Add-Content $backuplog "`r`nFlush file $item"
+            Add-Content $backuplog "Flush file $item"
             Remove-Item $item
         }
     }
     else{
-        Add-Content $backuplog "`r`nNo access to $path"
+        Add-Content $backuplog $CRLF
+        Add-Content $backuplog "No access to $path"
     }
 }
 
+Add-Content $backuplog $CRLF
+
 $timetook = "{0:hh}:{0:mm}:{0:ss}" -f $(New-TimeSpan -Start $currentdate)
-Add-Content $backuplog "`r`nBackup finished at $(Get-Date -format u) in $timetook"
-Add-Content $backuplog "`r`n===================================================="
+Add-Content $backuplog "Backup finished at $(Get-Date -format u) in $timetook"
+Add-Content $backuplog "===================================================="
+
+Add-Content $backuplog $CRLF
