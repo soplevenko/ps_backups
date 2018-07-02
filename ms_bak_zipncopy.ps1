@@ -1,3 +1,5 @@
+#Simple script, that dedicated to perform 
+
 #path to local and remote backup folders
 $path_src = "g:\mssqlbackup"
 $path_dst = "g:\mssqlbackup_copy"
