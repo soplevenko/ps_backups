@@ -1,4 +1,4 @@
-#Simple script, that dedicated to perform 
+#A simple script designed to perform post-processing of backup files created by MS SQL server
 
 #path to local and remote backup folders
 $path_src = "g:\mssqlbackup"
