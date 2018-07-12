@@ -1,5 +1,5 @@
 #A simple script, designed to automatically backup selected Postgres databases.
-#Script uses pg_dump, so it is no
+#Script uses pg_dump, so it is no continuous archiving
 #Script puts backup files to local and remote location
 #Script also distributes backup files by time lapse (daily, weekly, monthly).
 #Each time lapse corresponds to separate subfolder and retention period.

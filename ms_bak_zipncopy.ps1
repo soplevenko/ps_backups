@@ -1,4 +1,5 @@
 #A simple script designed to perform post-processing of backup files created by MS SQL server
+#Script zips newly created backup files and moves them to remote location
 
 #path to local and remote backup folders
 $path_src = "g:\mssqlbackup"
@@ -22,7 +23,7 @@ if(-not (Test-Path $path_dst)) {
 }
 
 #lookup for backup files with "archive" attribute, i.e., fresh ones
-foreach ($item in Get-ChildItem $path_src -Recurse -Include @("*.bak", "*.trn") | where {$_.Attributes -eq 'Archive'}){
+foreach ($item in Get-ChildItem $path_src -Recurse -Include @("*.bak", "*.trn") | Where-Object {$_.Attributes -eq 'Archive'}){
 	#for every file clear "archive" attribute and create 7-zip archive
 	
     $acrcitem = $item.DirectoryName+"\"+$item.BaseName+".7z"
