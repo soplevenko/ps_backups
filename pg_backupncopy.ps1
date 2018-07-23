@@ -1,14 +1,15 @@
 #A simple script, designed to automatically backup selected Postgres databases.
-#Script uses pg_dump, so it is no continuous archiving
-#Script puts backup files to local and remote location
+#Script uses pg_dump, so it is no continuous archiving.
+#Script puts backup files to local and remote location.
 #Script also distributes backup files by time lapse (daily, weekly, monthly).
 #Each time lapse corresponds to separate subfolder and retention period.
+#After the retention period expired, files being flushed.
 
 #set path to local and remote backup folders
 $path_src = "g:\pgsqlbackup"
 $path_dst = "g:\pgsqlbackup_copy"
 
-#To add new line into log just write empty one
+#to add new line into log just write empty one
 $CRLF = ""
 
 #set path to PostgreSQL binaries
@@ -93,9 +94,7 @@ foreach($path in $path_expire.Keys){
 }
 
 Add-Content $backuplog $CRLF
-
 $timetook = "{0:hh}:{0:mm}:{0:ss}" -f $(New-TimeSpan -Start $currentdate)
 Add-Content $backuplog "Backup finished at $(Get-Date -format u) in $timetook"
 Add-Content $backuplog "===================================================="
-
 Add-Content $backuplog $CRLF
