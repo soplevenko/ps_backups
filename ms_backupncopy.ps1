@@ -1,4 +1,12 @@
-﻿#path to local and remote backup folders
+﻿#A simple script designed to perform automatically backup and maintenance selected MS SQL databases.
+#Script uses osql client and command template to.
+#Script puts backup files to local and remote location.
+#Script also distributes backup files by time lapse (daily, weekly, monthly).
+#Each time lapse corresponds to separate subfolder and retention period.
+#After the retention period expired, files being flushed.
+
+
+#path to local and remote backup folders
 $path_src = "d:\mssqlbackup"
 $path_dst = "\\BACKUPSERVER\BackUp\1C8Backup"
 
