@@ -1,17 +1,21 @@
 ﻿#A simple script designed to perform automatically backup and maintenance selected MS SQL databases.
-#Script uses osql client and command template to.
-#Script puts backup files to local and remote location.
-#Script also distributes backup files by time lapse (daily, weekly, monthly).
-#Each time lapse corresponds to separate subfolder and retention period.
+#Script uses osql client and sql template to generate and execute maintenance commands.
+#After backup files created, script zips them and moves archives to remote location.
+#Script determines retention period for each subfolder within local and remote location.
 #After the retention period expired, files being flushed.
-
 
 #path to local and remote backup folders
 $path_src = "d:\mssqlbackup"
 $path_dst = "\\BACKUPSERVER\BackUp\1C8Backup"
 
-#Path to 7zip command-line
+#to add new line into log just write empty one
+$CRLF = ""
+
+#path to 7zip command-line
 $7zpath = """c:\Program Files\7-Zip\7z.exe"""
+
+#path to sql command template file
+$templateFile = "$path_src\service.tpl"
 
 #Get current date, format for filename basename
 $currentdate = Get-Date
