@@ -17,27 +17,46 @@ $7zpath = """c:\Program Files\7-Zip\7z.exe"""
 #path to sql command template file
 $templateFile = "$path_src\service.tpl"
 
-#Get current date, format for filename basename
+#get current date, format it for files naming
 $currentdate = Get-Date
 $datefilepart = $currentdate.ToString("yyyyMMdd_HHmmss")
 
-#write backup log
-$backuplog = "$path_src\backup.log"
-$sqllog = "$path_src\sqlrun" + "_" + "$datefilepart.log"
-Add-Content $backuplog "`r`n`r`nBackup log for $currentdate"
+#set bases names for maintenance
+$baseslist = @("test-1", "test-2")
 
-$templateFile = "$path_src\service.tpl"
+#set backup log name and location
+$backuplog = "$path_src\backup.log"
+Add-Content $backuplog "Backup log for $currentdate"
+Add-Content $backuplog $CRLF
+
+#set sql command log name and location, separate file for every launch
+$sqllog = "$path_src\sqlrun_" + "$datefilepart.log"
+
+#set backup files retention period in days for every subfolder (and time lapse respectively)
+$path_expire = @{}
+
+#local folders
+$path_expire["$path_src\Daily"] = 90
+$path_expire["$path_src\Weekly"] = 180
+$path_expire["$path_src\Monthly"] = 2000
+
+#remote folders
+$path_expire["$path_dst\Daily"] = 90
+$path_expire["$path_dst\Weekly"] = 180
+$path_expire["$path_dst\Monthly"] = 2000
+
+#if no template file found then log and exit 
 if(-not (Test-Path $templateFile)){
-    Add-Content $backuplog "Не найден файл шаблона запроса!"
+    Add-Content $backuplog "Query template file $templateFile not found!"
     exit 1
 }
 
+#generate query file from template
 $query_template = Get-Content $templateFile
 $query_file = "$path_src\service" + "_" + "$datefilepart.sql"
 Set-Content -Path $query_file -Value ""
 
-#Create backup for every base from list
-$baseslist = @("LatchClient", "Optim_83")
+#cycle through bases list
 foreach ($basename in $baseslist) {
     $backupfile = $basename +"_" + $datefilepart
     $backuppath = "$path_src\$basename"
@@ -55,10 +74,11 @@ foreach ($basename in $baseslist) {
     Add-Content -Path $query_file -Value $query 
 }
 
+#run generated sql query
 $osqlargs = "-E -S VERASERGEEVNA\SQLEXPRESS -i $query_file -o $sqllog"
-
 Start-Process osql $osqlargs -Wait -NoNewWindow
 
+#flush genrated sql 
 Remove-Item $query_file -Force  | out-null
 
 #What subfolder used for today file
@@ -104,24 +124,11 @@ Add-Content $backuplog "`r`n"
 
 #perform cleanup, delete old backup files
 
-#backup files expiration interval in days for every timelapse
-$path_expire = @{}
-
-#local folders
-$path_expire["$path_src\Daily"] = 90
-$path_expire["$path_src\Weekly"] = 180
-$path_expire["$path_src\Monthly"] = 2000
-
-#remote folders
-$path_expire["$path_dst\Daily"] = 90
-$path_expire["$path_dst\Weekly"] = 180
-$path_expire["$path_dst\Monthly"] = 2000
-
 #lookup through directories for expiresd files
 foreach($path in $path_expire.Keys){
     if(Test-Path $path){
         $dateexpire = $currentdate.AddDays(-$path_expire[$path])
-        foreach ($item in Get-ChildItem $path -Recurse -Include @("*.7z", "*.rar") | where {$_.LastWriteTime -le $dateexpire}){
+        foreach ($item in Get-ChildItem $path -Recurse -Include @("*.7z", "*.rar") | Where-Object{$_.LastWriteTime -le $dateexpire}){
             Add-Content $backuplog "`r`nFlush file $item"
             Remove-Item $item
         }

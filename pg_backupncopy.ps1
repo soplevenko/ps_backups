@@ -16,8 +16,7 @@ $CRLF = ""
 $dump_exe = """d:\Program Files\PostgreSQL\9.4.2-1.1C\bin\pg_dump.exe"""
 
 #set bases names for backup
-#$baseslist = @("test-1", "test-2")
-$baseslist = @("Optim83", "glv_tpc")
+$baseslist = @("test-1", "test-2")
 
 #get current date, format for filename
 $currentdate = Get-Date
