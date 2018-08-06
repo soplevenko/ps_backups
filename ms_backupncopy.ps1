@@ -17,6 +17,12 @@ $7zpath = """c:\Program Files\7-Zip\7z.exe"""
 #path to sql command template file
 $templateFile = "$path_src\service.tpl"
 
+#if no template file found then log and exit 
+if(-not (Test-Path $templateFile)){
+    Add-Content $backuplog "Query template file $templateFile not found!"
+    exit 1
+}
+
 #get current date, format it for files naming
 $currentdate = Get-Date
 $datefilepart = $currentdate.ToString("yyyyMMdd_HHmmss")
@@ -45,10 +51,16 @@ $path_expire["$path_dst\Daily"] = 90
 $path_expire["$path_dst\Weekly"] = 180
 $path_expire["$path_dst\Monthly"] = 2000
 
-#if no template file found then log and exit 
-if(-not (Test-Path $templateFile)){
-    Add-Content $backuplog "Query template file $templateFile not found!"
-    exit 1
+#determine subfolder by time lapse
+#if it's 1st day of month - then "Monthly"
+#else if it's end of week - then "Weekly"
+#otherwise - "Daily"
+$TLapseFolder = "Daily"
+if($currentdate.Day -eq 1){
+    $TLapseFolder = "Monthly"
+}
+elseif($currentdate.DayOfWeek -eq "Sunday"){
+    $TLapseFolder = "Weekly"
 }
 
 #generate query file from template
@@ -81,19 +93,10 @@ Start-Process osql $osqlargs -Wait -NoNewWindow
 #flush genrated sql 
 Remove-Item $query_file -Force  | out-null
 
-#What subfolder used for today file
-$TLapseFolder = "Daily"
-if($currentdate.Day -eq 1){
-    $TLapseFolder = "Monthly"
-}
-elseif($currentdate.DayOfWeek -eq "Sunday"){
-    $TLapseFolder = "Weekly"
-}
-
 #7zip files from source folder
 foreach ($item in Get-ChildItem $path_src -Recurse -Include *.bak){
 
-	#Place every 7z archive to a proper path
+	#place every 7z archive to a proper path
 	$parentdirname = Split-Path -Path $item.DirectoryName -Parent
 	$leafdirname = Split-Path -Path $item.DirectoryName -Leaf
     $acrcitem = $parentdirname + "\" + $TLapseFolder + "\" + $leafdirname + "\" + $item.BaseName + ".7z"
@@ -101,40 +104,40 @@ foreach ($item in Get-ChildItem $path_src -Recurse -Include *.bak){
     $args = "u -mx "+$acrcitem+" "+$item.FullName
     Start-Process $7zpath $args -Wait
     Remove-Item $item.FullName | out-null
-	Add-Content $backuplog "`r`n`r`nCreate backup for $item"
+	Add-Content $backuplog "Create backup for $item"
 }
 
-Add-Content $backuplog "`r`n"
+Add-Content $backuplog $CRLF
 
 #if no access to remote folder - do nothing
 if(-not (Test-Path $path_dst)) {
-    Add-Content $backuplog "`r`nNo access to $path_dst"
-    Add-Content $backuplog "`r`nBackup finished with error"
-    Add-Content $backuplog "`r`n===================================================="
+    Add-Content $backuplog "No access to $path_dst"
+    Add-Content $backuplog "Backup finished with error"
+    Add-Content $backuplog "===================================================="
     exit 1
 }
-
 
 #copy all archives from local to remote location 
 robocopy $path_src $path_dst *.7z *.rar *.zip /S /PURGE /W:3 /R:3 /NP /LOG+:$backuplog
 
-Add-Content $backuplog "`r`n"
+Add-Content $backuplog $CRLF
 
-Add-Content $backuplog "`r`n"
-
-#perform cleanup, delete old backup files
-
-#lookup through directories for expiresd files
+#perform cleanup, lookup through directories for expired files to flush them
 foreach($path in $path_expire.Keys){
     if(Test-Path $path){
         $dateexpire = $currentdate.AddDays(-$path_expire[$path])
         foreach ($item in Get-ChildItem $path -Recurse -Include @("*.7z", "*.rar") | Where-Object{$_.LastWriteTime -le $dateexpire}){
-            Add-Content $backuplog "`r`nFlush file $item"
+            Add-Content $backuplog "Flush file $item"
             Remove-Item $item
         }
     }
     else{
-        Add-Content $backuplog "`r`nNo access to $path"
+        Add-Content $backuplog "No access to $path"
     }
 }
 
+Add-Content $backuplog $CRLF
+$timetook = "{0:hh}:{0:mm}:{0:ss}" -f $(New-TimeSpan -Start $currentdate)
+Add-Content $backuplog "Backup finished at $(Get-Date -format u) in $timetook"
+Add-Content $backuplog "===================================================="
+Add-Content $backuplog $CRLF

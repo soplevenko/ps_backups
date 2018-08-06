@@ -40,10 +40,10 @@ $path_expire["$path_dst\Weekly"] = 180
 $path_expire["$path_dst\Monthly"] = 2000
 
 
-#Determine subfolder by time lapse
-#If it's 1st day of month - then "Monthly"
-#Else if it's end of week - then "Weekly"
-#Otherwise - "Daily"
+#determine subfolder by time lapse
+#if it's 1st day of month - then "Monthly"
+#else if it's end of week - then "Weekly"
+#otherwise - "Daily"
 
 $TLapseFolder = "Daily"
 if($currentdate.Day -eq 1){
