@@ -4,15 +4,28 @@
 #Script determines retention period for each subfolder within local and remote location.
 #After the retention period expired, files being flushed.
 
+#set MS SQL address
+$mssqladdress = "localhost\SQLEXPRESS"
+$mssqladdress = "ANDREYSPC\MSSQLSERVER14"
+
 #path to local and remote backup folders
-$path_src = "d:\mssqlbackup"
-$path_dst = "\\BACKUPSERVER\BackUp\1C8Backup"
+$path_src = "g:\mssqlbackup"
+$path_dst = "g:\mssqlbackup_copy"
 
 #to add new line into log just write empty one
 $CRLF = ""
 
 #path to 7zip command-line
 $7zpath = """c:\Program Files\7-Zip\7z.exe"""
+
+#get current date, format it for files naming
+$currentdate = Get-Date
+$datefilepart = $currentdate.ToString("yyyyMMdd_HHmmss")
+
+#set backup log name and location
+$backuplog = "$path_src\backup.log"
+Add-Content $backuplog "Backup log for $currentdate"
+Add-Content $backuplog $CRLF
 
 #path to sql command template file
 $templateFile = "$path_src\service.tpl"
@@ -23,17 +36,8 @@ if(-not (Test-Path $templateFile)){
     exit 1
 }
 
-#get current date, format it for files naming
-$currentdate = Get-Date
-$datefilepart = $currentdate.ToString("yyyyMMdd_HHmmss")
-
 #set bases names for maintenance
 $baseslist = @("test-1", "test-2")
-
-#set backup log name and location
-$backuplog = "$path_src\backup.log"
-Add-Content $backuplog "Backup log for $currentdate"
-Add-Content $backuplog $CRLF
 
 #set sql command log name and location, separate file for every launch
 $sqllog = "$path_src\sqlrun_" + "$datefilepart.log"
@@ -87,7 +91,7 @@ foreach ($basename in $baseslist) {
 }
 
 #run generated sql query
-$osqlargs = "-E -S VERASERGEEVNA\SQLEXPRESS -i $query_file -o $sqllog"
+$osqlargs = "-E -S $mssqladdress -i $query_file -o $sqllog"
 Start-Process osql $osqlargs -Wait -NoNewWindow
 
 #flush genrated sql 
