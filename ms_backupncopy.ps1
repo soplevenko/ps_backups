@@ -75,7 +75,7 @@ Set-Content -Path $query_file -Value ""
 #cycle through bases list
 foreach ($basename in $baseslist) {
     $backupfile = $basename +"_" + $datefilepart
-    $backuppath = "$path_src\$basename"
+    $backuppath = "$path_src\$TLapseFolder\$basename"
 
     if(-not(Test-Path $backuppath)){
         New-Item $backuppath -Type Directory
