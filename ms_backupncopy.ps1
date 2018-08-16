@@ -97,13 +97,11 @@ Start-Process osql $osqlargs -Wait -NoNewWindow
 #flush genrated sql 
 Remove-Item $query_file -Force  | out-null
 
-#7zip files from source folder
+#move *.bak files from source folder to 7zip archives
 foreach ($item in Get-ChildItem $path_src -Recurse -Include *.bak){
 
-	#place every 7z archive to a proper path
-	$parentdirname = Split-Path -Path $item.DirectoryName -Parent
-	$leafdirname = Split-Path -Path $item.DirectoryName -Leaf
-    $acrcitem = $parentdirname + "\" + $TLapseFolder + "\" + $leafdirname + "\" + $item.BaseName + ".7z"
+    #place every 7z archive to a proper path
+    $acrcitem = $item.DirectoryName+"\"+$item.BaseName+".7z"
 
     $args = "u -mx "+$acrcitem+" "+$item.FullName
     Start-Process $7zpath $args -Wait
