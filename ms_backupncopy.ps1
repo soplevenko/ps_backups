@@ -6,7 +6,6 @@
 
 #set MS SQL address
 $mssqladdress = "localhost\SQLEXPRESS"
-$mssqladdress = "ANDREYSPC\MSSQLSERVER14"
 
 #path to local and remote backup folders
 $path_src = "g:\mssqlbackup"
