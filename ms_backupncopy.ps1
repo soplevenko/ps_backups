@@ -1,4 +1,5 @@
-﻿#A simple script designed to perform automatically backup and maintenance selected MS SQL databases.
+﻿#A simple script designed to perform automatically backup and maintenance selected MS SQL Express databases.
+#Due to limitations of MS SQL Express, all maintenance should be performed by script itself.
 #Script uses osql client and sql template to generate and execute maintenance commands.
 #After backup files created, script zips them and moves archives to remote location.
 #Script determines retention period for each subfolder within local and remote location.
