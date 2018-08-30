@@ -1,1 +1,0 @@
-Small project, containing collection of Powershell scripts, dedicated to perform various stages of backup jobs. Scripts differs each other, depending on backup source (sql, file, etc.) and operation stages (create backup, pack backup, copy to remote, purge old backup…).
